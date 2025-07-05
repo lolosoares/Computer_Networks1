@@ -1,0 +1,133 @@
+ConfiguracaoDeVlansBasica
+
+--------##Switch Sw1 configurations:##----------
+
+Switch>enable
+Switch#conf t
+
+##Segurança e mensagem do dia##
+Switch(config)#banner motd #Bem-vindo ao SW1 #
+Switch(config)#enable secret soares
+Switch(config)#line console 0
+Switch(config-line)#password soares
+Switch(config-line)#login 
+Switch(config-line)#exit
+	
+Switch(config-if-range)#exit
+Switch(config)#vlan 10
+Switch(config-vlan)#name DEEL
+Switch(config-vlan)#exit
+Switch(config)#int range fa0/1-12
+Switch(config-if-range)#switchport access vlan 1
+Switch(config-if-range)#exit
+
+Switch(config)#vlan 3
+Switch(config-vlan)#name DEC
+Switch(config-vlan)#exit
+Switch(config)#int range fa0/13-24
+Switch(config-if-range)#switchport mode access
+Switch(config-if-range)#switchport access vlan 3
+Switch(config-if-range)#exit
+
+Switch(config)#int Gig0/1
+Switch(config-if)#switchport mode trunk
+Switch(config-if)#exit
+Switch(config)#do wr
+Building configuration...
+[OK]
+Switch(config)#
+
+
+--------------##Config of Router R1:##----------------------
+
+Router>enable
+Router#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+
+##Seguranca do dispositivo##
+
+Router(config)#hostname R1
+R1(config)#enable secret soares
+R1(config)#line console 0
+R1(config-line)#password soares
+R1(config-line)#login 
+R1(config-line)#exit
+R1(config)#line vty 0 4
+R1(config-line)#password soares
+R1(config-line)#login
+R1(config-line)#exit
+R1(config)#banner motd #Bem-vindo ao R1#
+
+##Criando Subinterfaces para as VLans.##
+
+R1(config)#int R1(config)#
+R1(config)#int Gig0/0/0.1
+R1(config-subif)#encapsulation dot1q 1
+R1(config-subif)#ip address 192.168.1.1 255.255.255.0
+R1(config-subif)#exit
+R1(config)#int Gig0/0/0.3
+R1(config-subif)#encapsulation dot1q 3
+R1(config-subif)#ip address 192.168.3.1 255.255.255.0
+R1(config-subif)#exit
+R1(config)#int Gig0/0/0
+R1(config-if)#no shutdown
+R1(config-if)#exit
+
+##Ativando DHCP para cada VLAN##
+
+R1(config)#ip dhcp pool VLan1
+R1(dhcp-config)#network 192.168.1.0 255.255.255.0
+R1(dhcp-config)#default-router 192.168.1.1
+R1(dhcp-config)#dns-server 8.8.8.8
+R1(dhcp-config)#exit
+
+R1(config)#ip dhcp pool VLan2
+R1(dhcp-config)#network 192.168.3.0 255.255.255.0
+R1(dhcp-config)#default-router 192.168.3.1
+R1(dhcp-config)#dns-server 8.8.8.8
+R1(dhcp-config)#exit
+R1(config)#ipv6 unicast-routing
+R1(config)#interface gig0/0.1
+%Invalid interface type and number
+R1(config)#interface gig0/0.1
+%Invalid interface type and number
+R1(config)#interface Gig0/0.1
+%Invalid interface type and number
+R1(config)#int Gig0/0.1
+%Invalid interface type and number
+R1(config)#int Gig0/0/0.1
+
+#Ativando ipv6#
+R1(config)#ipv6 unicast-routing
+
+R1(config)#int Gig0/0/0.1
+R1(config-subif)#ipv6 enable
+R1(config-subif)#exit
+R1(config)#int Gig0/0/0.3
+R1(config-subif)#ipv6 enable
+R1(config-subif)#exit
+
+R1(config)#ipv6 dhcp pool VLan1ipv6
+R1(config-dhcpv6)#address prefix 2001:10:1::/64
+R1(config-dhcpv6)#dns-server 2001:4860:4860::8888
+R1(config-dhcpv6)#domain-name deel.com
+R1(config-dhcpv6)#exit
+
+R1(config)#int Gig0/0/0.1
+R1(config-subif)#ipv6 address 2001:10:1::1/64
+R1(config-subif)#ipv6 dhcp server VLan1ipv6
+R1(config-subif)#ipv6 nd managed-config-flag
+R1(config-subif)#exit
+
+R1(config)#ipv6 dhcp pool VLan3ipv6
+R1(config-dhcpv6)#address prefix 2001:10:3::/64
+R1(config-dhcpv6)#dns-server 2001:4860:4860::8888
+R1(config-dhcpv6)#domain-name dec.com
+R1(config-dhcpv6)#exit
+
+R1(config)#int Gig0/0/0.3
+R1(config-subif)#ipv6 address 2001:10:3::1/64
+R1(config-subif)#ipv6 dhcp server VLan3ipv6
+R1(config-subif)#ipv6 nd managed-config-flag
+R1(config-subif)#exit
+R1(config)#do wr
